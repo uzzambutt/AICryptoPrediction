@@ -159,3 +159,4 @@ Acknowledgements: Nixtla (NeuralForecast / StatsForecast) concepts informed the 
 # Contact
 *Developer* - *Muhammad Uzzam Butt*
 *Contact*   - *uzzambutt1@outlook.com*
+*Company*   -**NorthernStudios**
