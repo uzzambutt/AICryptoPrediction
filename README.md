@@ -133,6 +133,8 @@ Divergence at the very end — common when using iterative/walk-forward predicti
 
 3. Increase training data or add regime-detection features (volatility, macro inputs).
 
+![result](data_deep/plots/ethereum_future_overlay_iter1.png)
+
 
 
 Indicators — use RSI and MACD to decide buy/hold/sell suggestions; these are heuristic and not financial advice.
