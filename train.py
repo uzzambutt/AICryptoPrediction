@@ -1,13 +1,11 @@
 """
-MULTI-CRYPTOCURRENCY PRICE FORECASTING SYSTEM
-==============================================
-A production-ready deep learning system for predicting next-day crypto closing prices
+ETHEREUM PRICE FORECASTING SYSTEM
+==================================
+A production-ready deep learning system for predicting next-day ETH-USD closing prices
 using comprehensive technical indicators and LSTM neural networks.
 
-Supports: BTC, ETH, BNB, SOL, ADA, DOGE, XRP, MATIC, DOT, AVAX, and more!
-
-Author: Muhammad Uzzam Butt © // NorthernStudios // uzzambutt1@outlook.com
-Version: 2.0.0 - Multi-coin support
+Author: AI Quant Research Team
+Version: 1.0.1 - Fixed PyTorch 2.6 compatibility
 """
 
 import os
@@ -21,7 +19,6 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import json
 import pickle
-import argparse
 
 # Deep learning imports
 import torch
@@ -53,32 +50,9 @@ torch.manual_seed(RANDOM_SEED)
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(RANDOM_SEED)
 
-# Supported cryptocurrencies with Yahoo Finance tickers
-SUPPORTED_COINS = {
-    'BTC': 'BTC-USD',
-    'ETH': 'ETH-USD',
-    'BNB': 'BNB-USD',
-    'SOL': 'SOL-USD',
-    'ADA': 'ADA-USD',
-    'DOGE': 'DOGE-USD',
-    'XRP': 'XRP-USD',
-    'MATIC': 'MATIC-USD',
-    'DOT': 'DOT-USD',
-    'AVAX': 'AVAX-USD',
-    'LINK': 'LINK-USD',
-    'UNI': 'UNI-USD',
-    'ATOM': 'ATOM-USD',
-    'LTC': 'LTC-USD',
-    'ETC': 'ETC-USD',
-    'XLM': 'XLM-USD',
-    'ALGO': 'ALGO-USD',
-    'VET': 'VET-USD',
-    'ICP': 'ICP-USD',
-    'FIL': 'FIL-USD'
-}
-
-# Global configuration template
-CONFIG_TEMPLATE = {
+# Global configuration
+CONFIG = {
+    'ticker': 'ETH-USD',
     'lookback_years': 5,
     'sequence_length': 60,
     'train_split': 0.8,
@@ -89,45 +63,30 @@ CONFIG_TEMPLATE = {
     'max_epochs': 10000,
     'early_stop_patience': 50,
     'gradient_clip': 1.0,
+    'checkpoint_dir': 'checkpoints',
+    'cache_file': 'ethereum_data.csv'
 }
 
-
-def get_config(coin_symbol):
-    """Generate coin-specific configuration"""
-    config = CONFIG_TEMPLATE.copy()
-    config['coin'] = coin_symbol
-    config['ticker'] = SUPPORTED_COINS[coin_symbol]
-    config['checkpoint_dir'] = f'checkpoints/{coin_symbol.lower()}'
-    config['cache_file'] = f'{coin_symbol.lower()}_data.csv'
-    config['output_prefix'] = coin_symbol.lower()
-    
-    # Create coin-specific directory
-    os.makedirs(config['checkpoint_dir'], exist_ok=True)
-    
-    return config
+# Create necessary directories
+os.makedirs(CONFIG['checkpoint_dir'], exist_ok=True)
 
 
 # ============================================================================
 # DATA ACQUISITION MODULE
 # ============================================================================
 
-def fetch_crypto_data(config):
+def fetch_ethereum_data(ticker=CONFIG['ticker'], years=CONFIG['lookback_years']):
     """
-    Fetch historical crypto data from Yahoo Finance with automatic retry logic.
+    Fetch historical ETH-USD data from Yahoo Finance with automatic retry logic.
     Implements caching to avoid redundant API calls.
     """
-    ticker = config['ticker']
-    coin = config['coin']
-    years = config['lookback_years']
-    cache_file = config['cache_file']
-    
-    logger.info(f"Fetching {years} years of {coin} ({ticker}) data from Yahoo Finance...")
+    logger.info(f"Fetching {years} years of {ticker} data from Yahoo Finance...")
     
     # Check for cached data
-    if os.path.exists(cache_file):
+    if os.path.exists(CONFIG['cache_file']):
         try:
-            df = pd.read_csv(cache_file, index_col=0, parse_dates=True)
-            logger.info(f"Loaded cached {coin} data: {len(df)} rows from {df.index[0]} to {df.index[-1]}")
+            df = pd.read_csv(CONFIG['cache_file'], index_col=0, parse_dates=True)
+            logger.info(f"Loaded cached data: {len(df)} rows from {df.index[0]} to {df.index[-1]}")
             return df
         except Exception as e:
             logger.warning(f"Failed to load cache: {e}. Fetching fresh data...")
@@ -150,7 +109,7 @@ def fetch_crypto_data(config):
             df = yf.download(ticker, start=start_date, end=end_date, progress=False)
             
             if df.empty:
-                raise ValueError(f"Downloaded data for {coin} is empty")
+                raise ValueError("Downloaded data is empty")
             
             # Clean column names if multi-level
             if isinstance(df.columns, pd.MultiIndex):
@@ -163,15 +122,15 @@ def fetch_crypto_data(config):
             df = df.dropna()
             
             # Save cache
-            df.to_csv(cache_file)
-            logger.info(f"Successfully fetched {len(df)} rows for {coin}. Cached to {cache_file}")
+            df.to_csv(CONFIG['cache_file'])
+            logger.info(f"Successfully fetched {len(df)} rows. Cached to {CONFIG['cache_file']}")
             
             return df
             
         except Exception as e:
-            logger.warning(f"Attempt {attempt + 1}/{max_retries} failed for {coin}: {e}")
+            logger.warning(f"Attempt {attempt + 1}/{max_retries} failed: {e}")
             if attempt == max_retries - 1:
-                logger.error(f"All retry attempts exhausted for {coin}. Exiting.")
+                logger.error("All retry attempts exhausted. Exiting.")
                 sys.exit(1)
     
     return None
@@ -285,12 +244,12 @@ class TechnicalIndicators:
         return sar.rolling(window=5).mean()
 
 
-def engineer_features(df, coin):
+def engineer_features(df):
     """
     Comprehensive feature engineering pipeline.
     Computes all technical indicators and price-based features.
     """
-    logger.info(f"Engineering features for {coin} from OHLCV data...")
+    logger.info("Engineering features from OHLCV data...")
     
     features_df = df.copy()
     close = df['Close']
@@ -355,7 +314,7 @@ def engineer_features(df, coin):
     # Drop NaN values from indicator calculations
     features_df = features_df.dropna()
     
-    logger.info(f"Feature engineering complete for {coin}. Total features: {features_df.shape[1]}")
+    logger.info(f"Feature engineering complete. Total features: {features_df.shape[1]}")
     
     return features_df
 
@@ -364,7 +323,7 @@ def engineer_features(df, coin):
 # PYTORCH DATASET AND MODEL ARCHITECTURE
 # ============================================================================
 
-class CryptoDataset(Dataset):
+class EthereumDataset(Dataset):
     """
     PyTorch Dataset for time series sequences.
     Creates sliding windows of historical data for LSTM input.
@@ -460,12 +419,12 @@ class EarlyStopping:
             self.counter = 0
 
 
-def prepare_data(features_df, config):
+def prepare_data(features_df):
     """
     Prepare training and validation datasets with proper normalization.
     Implements train-test split without data leakage.
     """
-    logger.info(f"Preparing datasets for {config['coin']} training...")
+    logger.info("Preparing datasets for training...")
     
     # Separate target variable
     target_col = 'Close'
@@ -476,7 +435,7 @@ def prepare_data(features_df, config):
     y = features_df[target_col].values
     
     # Train-validation split
-    split_idx = int(len(X) * config['train_split'])
+    split_idx = int(len(X) * CONFIG['train_split'])
     
     X_train, X_val = X[:split_idx], X[split_idx:]
     y_train, y_val = y[:split_idx], y[split_idx:]
@@ -492,63 +451,63 @@ def prepare_data(features_df, config):
     y_val_scaled = target_scaler.transform(y_val.reshape(-1, 1)).flatten()
     
     # Create datasets
-    train_dataset = CryptoDataset(X_train_scaled, y_train_scaled, config['sequence_length'])
-    val_dataset = CryptoDataset(X_val_scaled, y_val_scaled, config['sequence_length'])
+    train_dataset = EthereumDataset(X_train_scaled, y_train_scaled, CONFIG['sequence_length'])
+    val_dataset = EthereumDataset(X_val_scaled, y_val_scaled, CONFIG['sequence_length'])
     
     # Create dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=CONFIG['batch_size'], shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=CONFIG['batch_size'], shuffle=False)
     
     logger.info(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}")
     
     return train_loader, val_loader, feature_scaler, target_scaler, feature_cols
 
 
-def train_model(model, train_loader, val_loader, device, config):
+def train_model(model, train_loader, val_loader, device):
     """
     Main training loop with checkpointing and early stopping.
     Implements learning rate scheduling and gradient clipping.
     """
-    coin = config['coin']
-    logger.info(f"Starting model training for {coin}...")
+    logger.info("Starting model training...")
     
     # Loss function and optimizer
     criterion = nn.MSELoss()
-    optimizer = optim.AdamW(model.parameters(), lr=config['learning_rate'])
+    optimizer = optim.AdamW(model.parameters(), lr=CONFIG['learning_rate'])
     
     # Learning rate scheduler
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config['max_epochs'])
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CONFIG['max_epochs'])
     
     # Early stopping
-    early_stopping = EarlyStopping(patience=config['early_stop_patience'])
+    early_stopping = EarlyStopping(patience=CONFIG['early_stop_patience'])
     
     # Training state
     best_val_loss = float('inf')
-    checkpoint_path = os.path.join(config['checkpoint_dir'], f'best_{coin.lower()}_model.pth')
+    checkpoint_path = os.path.join(CONFIG['checkpoint_dir'], 'best_eth_model.pth')
     start_epoch = 0
     
     # Resume from checkpoint if exists
     if os.path.exists(checkpoint_path):
         try:
+            # FIXED: Added weights_only=False for PyTorch 2.6 compatibility
             checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             start_epoch = checkpoint['epoch'] + 1
             best_val_loss = checkpoint['val_loss']
-            logger.info(f"Resumed {coin} from checkpoint at epoch {start_epoch}, best val loss: {best_val_loss:.6f}")
+            logger.info(f"Resumed from checkpoint at epoch {start_epoch}, best val loss: {best_val_loss:.6f}")
         except Exception as e:
-            logger.warning(f"Failed to load {coin} checkpoint: {e}. Starting fresh.")
+            logger.warning(f"Failed to load checkpoint: {e}. Starting fresh.")
     
     # Training history
     history = {'train_loss': [], 'val_loss': []}
     
     # Training loop
-    for epoch in range(start_epoch, config['max_epochs']):
+    for epoch in range(start_epoch, CONFIG['max_epochs']):
         # Training phase
         model.train()
         train_losses = []
         
-        train_pbar = tqdm(train_loader, desc=f'{coin} Epoch {epoch+1}/{config["max_epochs"]} [Train]', leave=False)
+        train_pbar = tqdm(train_loader, desc=f'Epoch {epoch+1}/{CONFIG["max_epochs"]} [Train]', leave=False)
         for batch_x, batch_y in train_pbar:
             batch_x, batch_y = batch_x.to(device), batch_y.to(device)
             
@@ -559,7 +518,7 @@ def train_model(model, train_loader, val_loader, device, config):
             
             # Backward pass
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), config['gradient_clip'])
+            torch.nn.utils.clip_grad_norm_(model.parameters(), CONFIG['gradient_clip'])
             optimizer.step()
             
             train_losses.append(loss.item())
@@ -588,7 +547,7 @@ def train_model(model, train_loader, val_loader, device, config):
         
         # Logging
         if (epoch + 1) % 10 == 0 or epoch == 0:
-            logger.info(f"{coin} Epoch {epoch+1}: Train Loss={train_loss:.6f}, Val Loss={val_loss:.6f}, LR={scheduler.get_last_lr()[0]:.2e}")
+            logger.info(f"Epoch {epoch+1}: Train Loss={train_loss:.6f}, Val Loss={val_loss:.6f}, LR={scheduler.get_last_lr()[0]:.2e}")
         
         # Save best model
         if val_loss < best_val_loss:
@@ -600,19 +559,19 @@ def train_model(model, train_loader, val_loader, device, config):
                 'train_loss': train_loss,
                 'val_loss': val_loss,
             }, checkpoint_path)
-            logger.info(f"New best {coin} model saved with val loss: {val_loss:.6f}")
+            logger.info(f"New best model saved with val loss: {val_loss:.6f}")
         
         # Early stopping check
         early_stopping(val_loss)
         if early_stopping.early_stop:
-            logger.info(f"Early stopping triggered for {coin} at epoch {epoch+1}")
+            logger.info(f"Early stopping triggered at epoch {epoch+1}")
             break
     
-    # Load best model
+    # Load best model - FIXED: Added weights_only=False
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint['model_state_dict'])
     
-    logger.info(f"{coin} training complete. Best validation loss: {best_val_loss:.6f}")
+    logger.info(f"Training complete. Best validation loss: {best_val_loss:.6f}")
     
     return model, history, best_val_loss
 
@@ -621,18 +580,17 @@ def train_model(model, train_loader, val_loader, device, config):
 # EVALUATION AND FORECASTING
 # ============================================================================
 
-def evaluate_model(model, features_df, feature_scaler, target_scaler, feature_cols, device, config):
+def evaluate_model(model, features_df, feature_scaler, target_scaler, feature_cols, device):
     """
     Walk-forward validation on test data.
     Predicts one day ahead iteratively using previous predictions.
     """
-    coin = config['coin']
-    logger.info(f"Performing walk-forward validation for {coin}...")
+    logger.info("Performing walk-forward validation...")
     
     model.eval()
     
     # Prepare test data
-    split_idx = int(len(features_df) * config['train_split'])
+    split_idx = int(len(features_df) * CONFIG['train_split'])
     test_data = features_df.iloc[split_idx:].copy()
     
     X_test = test_data[feature_cols].values
@@ -645,9 +603,9 @@ def evaluate_model(model, features_df, feature_scaler, target_scaler, feature_co
     actuals = []
     
     with torch.no_grad():
-        for i in range(config['sequence_length'], len(X_test_scaled)):
+        for i in range(CONFIG['sequence_length'], len(X_test_scaled)):
             # Get sequence
-            sequence = X_test_scaled[i - config['sequence_length']:i]
+            sequence = X_test_scaled[i - CONFIG['sequence_length']:i]
             sequence_tensor = torch.FloatTensor(sequence).unsqueeze(0).to(device)
             
             # Predict
@@ -668,11 +626,11 @@ def evaluate_model(model, features_df, feature_scaler, target_scaler, feature_co
     mape = np.mean(np.abs((actuals_original - predictions_original) / actuals_original)) * 100
     r2 = r2_score(actuals_original, predictions_original)
     
-    logger.info(f"{coin} Metrics - RMSE: {rmse:.4f}, MAE: {mae:.4f}, MAPE: {mape:.2f}%, R²: {r2:.4f}")
+    logger.info(f"Evaluation Metrics - RMSE: {rmse:.2f}, MAE: {mae:.2f}, MAPE: {mape:.2f}%, R²: {r2:.4f}")
     
     # Prepare results
     results_df = pd.DataFrame({
-        'Date': test_data.index[config['sequence_length']:],
+        'Date': test_data.index[CONFIG['sequence_length']:],
         'Actual': actuals_original,
         'Predicted': predictions_original
     })
@@ -680,25 +638,24 @@ def evaluate_model(model, features_df, feature_scaler, target_scaler, feature_co
     return results_df, {'rmse': rmse, 'mae': mae, 'mape': mape, 'r2': r2}
 
 
-def create_visualization(results_df, features_df, metrics, config):
+def create_visualization(results_df, features_df, metrics):
     """
     Create comprehensive 3-panel visualization with actual vs predicted prices,
     RSI indicator, and MACD histogram.
     """
-    coin = config['coin']
-    logger.info(f"Creating visualization for {coin}...")
+    logger.info("Creating visualization...")
     
     fig, axes = plt.subplots(3, 1, figsize=(15, 12))
     
     # Panel 1: Actual vs Predicted
     axes[0].plot(results_df['Date'], results_df['Actual'], label='Actual', color='blue', linewidth=2)
     axes[0].plot(results_df['Date'], results_df['Predicted'], label='Predicted', color='red', linewidth=2, alpha=0.7)
-    axes[0].set_title(f'{coin} Actual vs Predicted (Walk-Forward): {results_df["Date"].iloc[0].strftime("%Y-%m-%d")} → {results_df["Date"].iloc[-1].strftime("%Y-%m-%d")}', 
+    axes[0].set_title(f'ETHEREUM Actual vs Predicted (Walk-Forward): {results_df["Date"].iloc[0].strftime("%Y-%m-%d")} → {results_df["Date"].iloc[-1].strftime("%Y-%m-%d")}', 
                      fontsize=14, fontweight='bold')
     axes[0].set_ylabel('Price (USD)', fontsize=12)
     axes[0].legend(loc='upper left', fontsize=10)
     axes[0].grid(True, alpha=0.3)
-    axes[0].text(0.02, 0.98, f'RMSE: ${metrics["rmse"]:.4f}\nMAE: ${metrics["mae"]:.4f}\nMAPE: {metrics["mape"]:.2f}%\nR²: {metrics["r2"]:.4f}',
+    axes[0].text(0.02, 0.98, f'RMSE: ${metrics["rmse"]:.2f}\nMAE: ${metrics["mae"]:.2f}\nMAPE: {metrics["mape"]:.2f}%\nR²: {metrics["r2"]:.4f}',
                 transform=axes[0].transAxes, fontsize=10, verticalalignment='top',
                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
     
@@ -718,4 +675,142 @@ def create_visualization(results_df, features_df, metrics, config):
     axes[2].bar(results_df['Date'], macd_hist, color=colors, alpha=0.6, label='MACD Histogram')
     axes[2].axhline(y=0, color='black', linestyle='-', linewidth=0.5)
     axes[2].set_ylabel('MACD Histogram', fontsize=12)
-    axes
+    axes[2].set_xlabel('Date', fontsize=12)
+    axes[2].legend(loc='upper left', fontsize=10)
+    axes[2].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig('ethereum_forecast.png', dpi=300, bbox_inches='tight')
+    logger.info("Visualization saved as ethereum_forecast.png")
+    
+    plt.close()
+
+
+# ============================================================================
+# MAIN EXECUTION PIPELINE
+# ============================================================================
+
+def main():
+    """
+    Main execution pipeline orchestrating the entire forecasting system.
+    Implements comprehensive error handling and checkpointing.
+    """
+    try:
+        logger.info("="*80)
+        logger.info("ETHEREUM PRICE FORECASTING SYSTEM - STARTING")
+        logger.info("="*80)
+        
+        # Step 1: Data acquisition
+        df = fetch_ethereum_data()
+        
+        # Step 2: Feature engineering
+        features_df = engineer_features(df)
+        
+        # Step 3: Data preparation
+        train_loader, val_loader, feature_scaler, target_scaler, feature_cols = prepare_data(features_df)
+        
+        # Step 4: Device configuration
+        if torch.cuda.is_available():
+            device = torch.device('cuda')
+            logger.info("Using CUDA GPU for training")
+        elif torch.backends.mps.is_available():
+            device = torch.device('mps')
+            logger.info("Using Apple MPS for training")
+        else:
+            device = torch.device('cpu')
+            logger.info("Using CPU for training")
+        
+        # Step 5: Model initialization
+        input_size = len(feature_cols)
+        model = LSTMForecaster(
+            input_size=input_size,
+            hidden_sizes=CONFIG['hidden_sizes'],
+            dropout=CONFIG['dropout']
+        ).to(device)
+        
+        logger.info(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
+        
+        # Step 6: Training
+        model, history, best_val_loss = train_model(model, train_loader, val_loader, device)
+        
+        # Step 7: Evaluation
+        results_df, metrics = evaluate_model(model, features_df, feature_scaler, target_scaler, feature_cols, device)
+        
+        # Step 8: Save predictions
+        results_df.to_csv('predictions_eth.csv', index=False)
+        logger.info("Predictions saved to predictions_eth.csv")
+        
+        # Step 9: Save scalers
+        with open(os.path.join(CONFIG['checkpoint_dir'], 'feature_scaler.pkl'), 'wb') as f:
+            pickle.dump(feature_scaler, f)
+        with open(os.path.join(CONFIG['checkpoint_dir'], 'target_scaler.pkl'), 'wb') as f:
+            pickle.dump(target_scaler, f)
+        logger.info("Scalers saved to checkpoint directory")
+        
+        # Step 10: Create visualization
+        create_visualization(results_df, features_df, metrics)
+        
+        # Step 11: Final summary
+        logger.info("="*80)
+        logger.info("TRAINING SUMMARY")
+        logger.info("="*80)
+        logger.info(f"Best Validation Loss: {best_val_loss:.6f}")
+        logger.info(f"Test RMSE: ${metrics['rmse']:.2f}")
+        logger.info(f"Test MAE: ${metrics['mae']:.2f}")
+        logger.info(f"Test MAPE: {metrics['mape']:.2f}%")
+        logger.info(f"Test R²: {metrics['r2']:.4f}")
+        logger.info("="*80)
+        logger.info("System execution completed successfully")
+        logger.info("="*80)
+        
+        # Save final configuration and metrics
+        summary = {
+            'timestamp': datetime.now().isoformat(),
+            'config': CONFIG,
+            'metrics': metrics,
+            'best_val_loss': float(best_val_loss),
+            'total_features': len(feature_cols),
+            'training_samples': len(train_loader.dataset),
+            'validation_samples': len(val_loader.dataset),
+            'test_samples': len(results_df)
+        }
+        
+        with open('training_summary.json', 'w') as f:
+            json.dump(summary, f, indent=4)
+        
+        logger.info("Training summary saved to training_summary.json")
+        
+        return model, results_df, metrics
+        
+    except KeyboardInterrupt:
+        logger.warning("Training interrupted by user")
+        sys.exit(0)
+        
+    except Exception as e:
+        logger.error(f"Critical error in main pipeline: {e}", exc_info=True)
+        logger.error("System execution failed. Check train_log.txt for details")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    """
+    Entry point for the Ethereum forecasting system.
+    Execute with: python ethereum_forecaster.py
+    """
+    
+    # Print system information
+    print("\n" + "="*80)
+    print("ETHEREUM PRICE FORECASTING SYSTEM v1.0.1")
+    print("="*80)
+    print(f"PyTorch Version: {torch.__version__}")
+    print(f"CUDA Available: {torch.cuda.is_available()}")
+    print(f"MPS Available: {torch.backends.mps.is_available()}")
+    print(f"Start Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("="*80 + "\n")
+    
+    # Execute main pipeline
+    main()
+    
+    print("\n" + "="*80)
+    print("EXECUTION COMPLETE - Check ethereum_forecast.png for results")
+    print("="*80 + "\n")
