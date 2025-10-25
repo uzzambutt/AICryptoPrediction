@@ -121,6 +121,7 @@ Persistence MAE = mean(|y_t+1 - y_t|)
 
 If model MAE ≈ persistence MAE, the model is performing about as well as "no-change" baseline.
 
+![EthereumData](data_deep/plots/ethereum_chunk_iter1.png)
 
 Divergence at the very end — common when using iterative/walk-forward predictions: errors compound when model predictions are fed back as inputs. To diagnose:
 
