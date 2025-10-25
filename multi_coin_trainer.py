@@ -2,7 +2,6 @@
 """
 deep_multi_coin_trainer.py (single-checkpoint per iteration + indicator plots + unscaled train MAE)
 
-Overwrite your existing file with this one.
 
 Outputs:
  - data_deep/cache/<coin>_YYYY-MM-DD_YYYY-MM-DD.csv    (cached chunks)
@@ -56,7 +55,7 @@ INPUT_SIZE = 90
 H = 7
 FEATURE_LAGS = 14
 BATCH_SIZE = 32
-EPOCHS = 1000        # you used big numbers earlier; set as needed
+EPOCHS = 1000        # set as needed
 LR = 1e-3
 WEIGHT_DECAY = 1e-5
 PATIENCE = 12
