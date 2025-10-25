@@ -37,7 +37,7 @@ import requests
 warnings.filterwarnings("ignore")
 
 # ---------------- CONFIG ----------------
-COINS = ["ethereum"]          # Example; change as needed
+COINS = ["litecoin"]          # Example; change as needed
 DATA_DIR = Path("data_deep")
 CACHE_DIR = DATA_DIR / "cache"
 MODEL_DIR = DATA_DIR / "models"
@@ -52,25 +52,25 @@ COINGECKO_PUBLIC_BASE = "https://api.coingecko.com/api/v3/coins/{id}/market_char
 COINGECKO_PRO_BASE = "https://pro-api.coingecko.com/api/v3/coins/{id}/market_chart/range"
 
 # model/training
-INPUT_SIZE = 90
-H = 7
-FEATURE_LAGS = 14
-BATCH_SIZE = 32
-EPOCHS = 1000        # you used big numbers earlier; set as needed
-LR = 1e-3
-WEIGHT_DECAY = 1e-5
-PATIENCE = 12
+INPUT_SIZE = 210
+H = 30
+FEATURE_LAGS = 30
+BATCH_SIZE = 16
+EPOCHS = 3500        # you used big numbers earlier; set as needed
+LR = 5e-4
+WEIGHT_DECAY = 1e-6
+PATIENCE = 20
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # model params
-HIDDEN_SIZE = 128
-NUM_LAYERS = 2
-DROPOUT = 0.2
+HIDDEN_SIZE = 96
+NUM_LAYERS = 4
+DROPOUT = 0.25
 
 # behavior
 TRAIN_MIN_ROWS = 120
 MIN_VAL_SPLIT = 0.1
-MAX_ITER_NO_IMPROVE = 2
+MAX_ITER_NO_IMPROVE = 3
 FORCE_FULL_TRAIN = False
 
 # trade thresholds
