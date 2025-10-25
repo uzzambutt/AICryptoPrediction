@@ -40,7 +40,23 @@ AICryptoPrediction trains and evaluates forecasting models for crypto assets (e.
 
 ## Repository layout
 ```
-AICryptoPrediction/ ├── data_deep/ │   ├── cache/                  # Cached CSV chunks (gitignored) │   ├── plots/                  # Put result images here │   └── train_log.csv ├── lightning_logs/             # If using PyTorch Lightning ├── multi_coin_trainer.py       # ➜ MAIN script to run (training + eval + plotting) ├── fast_trainer.py             # CPU-optimized quick trainer ├── produce_forecast_with_model.py ├── seed_btc_from_yahoo.py ├── train_nixtla_nhits.py ├── requirements.txt ├── README.md └── .gitignore
+├── btc_data.csv
+├── btc_forecast.png
+├── predictions_btc.csv
+├── training_summary_btc.json
+├── checkpoints/btc/
+│   ├── best_btc_model.pth
+│   ├── feature_scaler.pkl
+│   └── target_scaler.pkl
+├── eth_data.csv
+├── eth_forecast.png
+├── predictions_eth.csv
+├── training_summary_eth.json
+├── checkpoints/eth/
+│   └── ...
+├── sol_data.csv
+├── sol_forecast.png
+└── multi_coin_summary.json
 ```
 
 > Files and folders under `data_deep/` and `models/` should be added to `.gitignore`. Large model artifacts should use Git LFS or external hosting.
