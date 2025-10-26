@@ -78,7 +78,7 @@ pip install -r requirements.txt
 
 
 
-`python multi_coin_trainer.py`
+`python train.py`
 
 This will:
 
