@@ -54,8 +54,8 @@ CUDA-capable GPU (optional, but recommended)
 
 ```bash
 # Clone the repository
-git clone https://github.com/uzzambutt/crypto-forecaster.git
-cd crypto-forecaster
+git clone https://github.com/uzzambutt/AICryptoPrediction.git
+cd AICryptoPrediction
 
 # Install dependencies
 pip install torch pandas numpy matplotlib yfinance scikit-learn tqdm
@@ -65,22 +65,22 @@ pip install torch pandas numpy matplotlib yfinance scikit-learn tqdm
 
 ```bash
 # Train single coin (interactive mode - asks for indicators)
-python crypto_forecaster.py --coin ETH
+python train.py --coin ETH
 
 # Train with specific forecast period
-python crypto_forecaster.py --coin BTC --days 60
+python train.py --coin BTC --days 60
 
 # Non-interactive mode (skip indicator selection)
-python crypto_forecaster.py --coin BTC --no-interactive
+python train.py --coin BTC --no-interactive
 
 # Train multiple coins
-python crypto_forecaster.py --coins BTC ETH SOL BNB --days 30
+python train.py --coins BTC ETH SOL BNB --days 30
 
 # Train all supported coins
-python crypto_forecaster.py --all --days 7
+python train.py --all --days 7
 
 # List available cryptocurrencies
-python crypto_forecaster.py --list
+python train.py --list
 ```
 
 ## 📖 Detailed Usage
@@ -260,7 +260,7 @@ The system automatically saves checkpoints. If training is interrupted, simply r
 
 ```bash
 # Training interrupted at epoch 150
-python crypto_forecaster.py --coin BTC
+python train.py --coin BTC
 
 # Output: "Resumed BTC from checkpoint at epoch 151"
 ```
@@ -271,13 +271,13 @@ Train multiple coins overnight:
 
 ```bash
 # Short-term forecasts for trading
-python crypto_forecaster.py --coins BTC ETH BNB SOL ADA --days 7
+python train.py --coins BTC ETH BNB SOL ADA --days 7
 
 # Medium-term forecasts for investment
-python crypto_forecaster.py --all --days 30 --no-interactive
+python train.py --all --days 30 --no-interactive
 
 # Long-term forecasts
-python crypto_forecaster.py --coins BTC ETH --days 90
+python train.py --coins BTC ETH --days 90
 ```
 
 ### Clear Cache and Retrain
@@ -287,7 +287,7 @@ python crypto_forecaster.py --coins BTC ETH --days 90
 rm -rf checkpoints/ *.csv *.png *.json
 
 # Fresh training
-python crypto_forecaster.py --coin ETH
+python train.py --coin ETH
 ```
 
 ## 📈 Use Cases
@@ -345,7 +345,7 @@ pip install yfinance
 ```bash
 # Delete checkpoints and retrain with latest code
 rm -rf checkpoints/
-python crypto_forecaster.py --coin BTC
+python train.py --coin BTC
 ```
 
 **Issue**: Import errors
