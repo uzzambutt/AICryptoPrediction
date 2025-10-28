@@ -4,7 +4,7 @@ ETHEREUM PRICE FORECASTING SYSTEM
 A production-ready deep learning system for predicting next-day ETH-USD closing prices
 using comprehensive technical indicators and LSTM neural networks.
 
-Author: AI Quant Research Team
+Author: Muhammad Uzzam Butt ©️ 2025
 Version: 1.0.1 - Fixed PyTorch 2.6 compatibility
 """
 
