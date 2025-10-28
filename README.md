@@ -31,15 +31,15 @@ A production-ready deep learning system for predicting cryptocurrency prices usi
 ## 📸 Example Results
 
 ### Future Price Forecast
-![ETH Future Forecast](https://github.com/uzzambutt/crypto-forecaster/blob/main/examples/eth_future_forecast.png)
+![ETH Future Forecast](src/Untitled.png)
 *Ethereum 30-day price forecast with 95% confidence intervals. The model predicts a -3.04% change from current price.*
 
 ### Custom Technical Indicators
-![ETH Custom Indicators](https://github.com/uzzambutt/crypto-forecaster/blob/main/examples/eth_indicators_only.png)
+![ETH Custom Indicators](src/Untitled2.png)
 *Custom visualization showing price with RSI, MACD, Stochastic Oscillator, Bollinger Bands, Moving Averages, Volume, and more.*
 
 ### Standard Performance Chart
-![ETH Standard Forecast](https://github.com/uzzambutt/crypto-forecaster/blob/main/examples/eth_forecast.png)
+![ETH Standard Forecast](src/Untitled1.png)
 *Walk-forward validation showing actual vs predicted prices with key performance metrics (RMSE, MAE, R²).*
 
 ## 🚀 Quick Start
